@@ -4020,7 +4020,7 @@ SudokuGrid::X_NodeChain::getNode( HouseIterator &groupIterator, int candidateCou
 }  // -------------------------------------------------------------------------------------------
 
 
-// == old x-chain: with fewer seedLinks than possible (in special cases) ========================
+// ==== old x-chain: with fewer seedLinks than possible (in special cases) ======================
 
 bool SudokuGrid::X_NodeChain::seedGroupStrongLinkOld( BoxIterator &boxIterator ) {
   // return true, if found a strong link within same box
