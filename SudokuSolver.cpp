@@ -3413,29 +3413,6 @@ const SudokuGrid::X_NodeChain::Link::Node * SudokuGrid::X_NodeChain::Link::getCh
   return nullptr;
 }  // -------------------------------------------------------------------------------------------
 
-#if 0
-std::tuple<bool, const SudokuGrid::X_NodeChain::Link::Node *>
-SudokuGrid::X_NodeChain::Link::chainClosed( const Node &strongLinkEnd ) const {
-  // return true, if any chained strongLink starting node shares a house with 'strongLinkEnd'
-  // return also: address of deepest chained strongLink starting node sharing a house with 'strongLinkEnd'
-  // 
-  // current link object must be a chained weakLink ending node and builds with 'strongLinkEnd' current strong link.
-  // current chain must contain at least one weakLink/strongLink set.
-
-  assert( prev_ != nullptr  &&  prev_->prev_ != nullptr );           // at least one chained weakLink/strongLink set
-
-  const Node *nodeInSameHouse = nullptr;
-
-  for (auto link = this; link->prev_ != nullptr; ) {
-    assert( link->prev_->prev_ != nullptr );
-    link = link->prev_->prev_;
-    if (strongLinkEnd.sharingSameHouse( &link->node ))               // look at each chained strongLink starting node
-      nodeInSameHouse = &link->node;
-  }
-  //return std::tuple { nodeInSameHouse != nullptr, nodeInSameHouse };
-  return { nodeInSameHouse != nullptr, nodeInSameHouse };
-}  // -------------------------------------------------------------------------------------------
-#endif
 const SudokuGrid::X_NodeChain::Link *
 SudokuGrid::X_NodeChain::Link::chainEffectivelyClosed( const Node &newStrongLinkEnd ) const {
   // find deepest chained strongLink starting node which shares a house with 'newStrongLinkEnd'
@@ -4020,186 +3997,11 @@ SudokuGrid::X_NodeChain::getNode( HouseIterator &groupIterator, int candidateCou
   return Link::Node { nodeType(), nodeCell() };  // favor Return Value Optimization (RVO is compiler's job since C++17)
 }  // -------------------------------------------------------------------------------------------
 
-
 // ==== old x-chain: with fewer seedLinks than possible (in special cases) ======================
 
-bool SudokuGrid::X_NodeChain::seedGroupStrongLinkOld( BoxIterator &boxIterator ) {
-  // return true, if found a strong link within same box
-
-  const int clueIndex      = getClueIndex();
-  const int candidateCount = candidateCountInHouse( boxIterator, clueIndex );
-#if 1
-  if (candidateCount > SUDOKU_BOX_SIZE + SUDOKU_BOX_SIZE - 1)        // perpendicular nodes only
-    return false;                                                    // too many candidates in box for a strong link
-#else
-  if (candidateCount > SUDOKU_BOX_SIZE + SUDOKU_BOX_SIZE)            // parallel nodes also allowed
-    return false;                                                    // too many candidates in box for a strong link
-#endif
-
-  assert( candidateCount > 2 );                                      // at least one node possible
-
-  // search a strong link between perpendicular nodes:
-  RowIterator rowGroupIt { &boxIterator[0] };
-  ColIterator colGroupIt { &boxIterator[0] };
-
-  for (size_t row = 0; row < SUDOKU_BOX_SIZE; row++, rowGroupIt.nextBoxGroup(), colGroupIt.reset())
-    for (size_t col = 0; col < SUDOKU_BOX_SIZE; col++, colGroupIt.nextBoxGroup()) {
-      const Cell *intersectionCell = intersectionOfCells( &rowGroupIt[0], &colGroupIt[0] );
-      const int   intersectionBusy = intersectionCell->candidatePossible( clueIndex );
-      const int   rowGroupCandidateCount = candidateCountInGroup( rowGroupIt, clueIndex );
-      const int   colGroupCandidateCount = candidateCountInGroup( colGroupIt, clueIndex );
-      //printf( "intersectionCell: @[%d:%d], node sizes: %d,%d\n",
-      //        rowNumber( intersectionCell ), colNumber( intersectionCell ), rowGroupCandidateCount, colGroupCandidateCount );
-      if (candidateCount + (intersectionBusy ? 1 : 0) > rowGroupCandidateCount + colGroupCandidateCount)
-        continue;                                          // too many candidates in box for perpendicular nodes
-      if (intersectionBusy && (rowGroupCandidateCount == 1 || colGroupCandidateCount == 1))
-        continue;                                          // one of perpendicular nodes is empty
-      assert( rowGroupCandidateCount > 0 && colGroupCandidateCount > 0 );
-      if (rowGroupCandidateCount > colGroupCandidateCount) {
-        seedLink[0].node = getNode( rowGroupIt, rowGroupCandidateCount, clueIndex );
-        seedLink[1].node = getNode( colGroupIt, colGroupCandidateCount, clueIndex, intersectionCell );       // chain root
-      } else {
-        seedLink[0].node = getNode( colGroupIt, colGroupCandidateCount, clueIndex );
-        seedLink[1].node = getNode( rowGroupIt, rowGroupCandidateCount, clueIndex, intersectionCell );       // chain root
-      }
-      //if (seedLink[0].node.type_ != NodeId::point  &&  seedLink[1].node.type_ != NodeId::point)
-      //  printSeedLink( seedLink, "seedGroupStrongLink( clue:%d ) found in box(%d): DOUBLE node link! (sizes: %d,%d) ", 
-      //                 clueIndex + 1, boxNumber( seedLink[1].node.cell_ ),
-      //                 rowGroupCandidateCount, colGroupCandidateCount);
-      //else
-      //  printf( "seedGroupStrongLink( clue:%d ) found in box(%d): [%s] link!\n",
-      //          clueIndex + 1, boxNumber( seedLink[1].node.cell_ ),
-      //          (seedLink[1].node.type_ == NodeId::point) ? "node <== point" : "point <== node" );
-      return true;
-    }
-
-  // search a strong link between parallel nodes: todo!
-
-  // are strong links between parallel nodes in same box legal/useful? --> YES!
-
-  return false;
-}  // -------------------------------------------------------------------------------------------
-
-bool SudokuGrid::X_NodeChain::seedGroupStrongLinkOld( HouseIterator &lineIterator ) {
-  // return true, if found a strong link within same line (row/col) between plain cell and group node or between 2 nodes
-  size_t nodeCount = 0;
-  const int clueIndex = getClueIndex();
-
-  assert( lineIterator.isRowType()  ||  lineIterator.isColType() );
-
-  auto &groupIterator = (lineIterator.isRowType()) ? (HouseIterator &) RowIterator { &lineIterator[0] }
-                                                   : (HouseIterator &) ColIterator { &lineIterator[0] };
-  for (size_t i = 0; i < SUDOKU_GRID_SIZE / SUDOKU_BOX_SIZE; i++, groupIterator.nextGroup()) {
-    int groupCandidateCount = candidateCountInGroup( groupIterator, clueIndex );
-    if (groupCandidateCount != 0)
-      if (nodeCount < elementsof( seedLink ))
-        seedLink[nodeCount++].node = getNode( groupIterator, groupCandidateCount, clueIndex );
-      else
-        nodeCount += 1;
-  }
-  return (nodeCount == elementsof( seedLink )) ? true : false;
-}  // -------------------------------------------------------------------------------------------
-
-bool SudokuGrid::X_NodeChain::seedStrongLinkOld( HouseIterator &houseIterator ) {
-  size_t candidateCountInHouse = 0;
-  const int clueIndex = getClueIndex();
-
-  for (size_t i = 0; i < SUDOKU_GRID_SIZE; i++)
-    if (houseIterator[i].candidatePossible( clueIndex ))
-      if (candidateCountInHouse < elementsof( seedLink ))
-        seedLink[candidateCountInHouse++].node = Link::Node { NodeId::point, &houseIterator[i] };
-      else
-        candidateCountInHouse += 1;
-
-  if (candidateCountInHouse < elementsof( seedLink ))
-    return false;                                                    // candidate solved or naked/hidden single
-  if (candidateCountInHouse == elementsof( seedLink ))
-    return true;                                                     // strongLink with plain cells (no group nodes)
-
-  if (houseIterator.isBoxType())
-    return seedGroupStrongLinkOld( (BoxIterator &) houseIterator );  // try a strongLink within a box with node/nodes
-  else
-    return seedGroupStrongLinkOld( houseIterator );                  // try a strongLink using group node/nodes
-}  // -------------------------------------------------------------------------------------------
-
-bool SudokuGrid::X_NodeChain::seedChainOld( HouseIterator &&houseIterator, int clueIndex ) {
-  bool found = false;
-
-  X_NodeChain chain { clueIndex };
-
-  // problem #1:
-  // obecny seedChain() nie generuje wszystkich mo¿liwych pocz¹tkowych strongLinks (zaczynaj¹cych chain)
-  // jeœli houseIterator.isBoxType(), bo w tym przypadku mo¿liwe s¹ uk³ady komórek z kandydatami daj¹ce
-  // jeden albo DWA poprawne strongLinks:
-  //   x.x
-  //   x..    tworzy 2 mo¿liwe strongLinks: rowGroupNode ==> pointNode, colGroupNode ==> pointNode
-  //   ...
-  // 
-  //   x.x
-  //   x.x    tworzy 2 mo¿liwe strongLinks: rowGroupNode ==> rowGroupNode, colGroupNode ==> colGroupNode
-  //   ...
-  //
-  // problem #2:
-  // metoda seedGroupStrongLink( BoxIterator &boxIterator )
-  // nie potrafi jeszcze generowaæ strongLink between two PARALLEL nodes
-  // (potrafi tylko strongLink between PERPENDICULAR groupNodes, albo miêdzy groupNode a pointNode)
-  // 
-  // problem 3#:
-  // trzeba sprawdziæ, czy póŸniejsza metoda dodawania addWeakLink i addStrongLink potrafi¹ dodawaæ
-  // both PERPENDICULAR and PARALLEL groupNodes within same box
-
-  for (size_t house = 0; house < SUDOKU_GRID_SIZE; house++, houseIterator.nextHouse()) {
-    if (chain.seedStrongLinkOld( houseIterator )) {
-    #if 1
-      if (chain.seedLink[0].node.type_ != NodeId::point ||
-          chain.seedLink[1].node.type_ != NodeId::point)
-        printSeedLink( chain.seedLink, "startChain( clue:%d ) strong link: ", clueIndex + 1 );
-      assert( chain.seedLink[0].prev_->prev_ == nullptr  &&  chain.seedLink[1].prev_ == nullptr );
-      chain.seedLink[1].candidateProtection( true ), chain.seedLink[0].candidateProtection( true );
-      if (chain.seedLink[0].addWeakLink( &chain ))         // strong link head as chain start
-        found = true;
-
-      std::swap( chain.seedLink[0].node, chain.seedLink[1].node );
-      assert( chain.seedLink[0].prev_->prev_ == nullptr  &&  chain.seedLink[1].prev_ == nullptr );
-
-      if (chain.seedLink[0].addWeakLink( &chain ))         // strong link tail as chain start
-        found = true;
-      #if 0
-        if (jedna czêœæ seedLink ma type_ != NodeId::point a druga ma type_ == NodeId::point &&
-             czêœæ z type_ != NodeId::point ma dok³adnie 2 komórki z kandydatem clueIntex &&
-             intersectionCell obu czêœci seedLink jest busy, czyli ma kandydata clueIndex) {
-          printf( "Rare case of seed strong link! Opposite constellation of "node <== point" is possible too!!\n" );
-          zamieniæ konstelacjê "node <== point" na alternatywn¹ i ponowiæ próby budowania ³añcucha w obu kierunkach
-          komórki bior¹ce udzia³ w takim seedLink s¹ w obu wypadkach idetyczne, tylko zestaw daj¹cy node mo¿liwy
-            jest w dwóch wariantach
-        }
-      #endif
-      chain.seedLink[0].candidateProtection( false ), chain.seedLink[1].candidateProtection( false );
-    #else
-      //printf( "startChain( clue:%d )  Either-Or link: @[%d,%d --> %d,%d]\n", clueIndex + 1,
-      //        rowNumber( chain.seedLink[0].cell_ ),        colNumber( chain.seedLink[0].cell_ ),
-      //        rowNumber( chain.seedLink[0].prev_->cell_ ), colNumber( chain.seedLink[0].prev_->cell_ ));
-      assert( chain.seedLink[0].prev_->prev_ == nullptr  &&  chain.seedLink[1].prev_ == nullptr );
-      chain.seedLink[0].cell_->candidateProtection( true ), chain.seedLink[1].cell_->candidateProtection( true );
-      //printf( "F:startLink( clue:%d ) Either-Or link: @[%d,%d ==> %d,%d]\n", clueIndex + 1,
-      //        rowNumber( chain.seedLink[0].prev_->cell_ ), colNumber( chain.seedLink[0].prev_->cell_ ),
-      //        rowNumber( chain.seedLink[0].cell_ ),        colNumber( chain.seedLink[0].cell_ ) );
-      if (chain.seedLink[0].addWeakLink( &chain ))         // strong link head as chain start
-        found = true;
-
-      std::swap( chain.seedLink[0].cell_, chain.seedLink[1].cell_ );
-      assert( chain.seedLink[0].prev_->prev_ == nullptr  &&  chain.seedLink[1].prev_ == nullptr );
-      //printf( "B:startLink( clue:%d ) Either-Or link: @[%d,%d ==> %d,%d]\n", clueIndex + 1,
-      //        rowNumber( chain.seedLink[0].prev_->cell_ ), colNumber( chain.seedLink[0].prev_->cell_ ),
-      //        rowNumber( chain.seedLink[0].cell_ ),        colNumber( chain.seedLink[0].cell_ ) );
-      if (chain.seedLink[0].addWeakLink( &chain ))         // strong link tail as chain start
-        found = true;
-      chain.seedLink[0].cell_->candidateProtection( false ), chain.seedLink[1].cell_->candidateProtection( false );
-    #endif
-    }
-  }
-  return found;
-}  // -------------------------------------------------------------------------------------------
+   // todo!  task #3:
+   // are current addWeakLink() and addStrongLink() really able to add
+   // both PERPENDICULAR and PARALLEL groupNodes within same box -- test required!
 
 // ==============================================================================================
 
@@ -4447,21 +4249,12 @@ bool SudokuGrid::x_NodeChain( void ) {
   bool found = false;
 
   for (int clueIndex = 0; clueIndex < SUDOKU_GRID_SIZE; clueIndex++) {
-  #if 1
     if (X_NodeChain::seedChain( RowIterator { (*grid_).data() }, clueIndex ))
       found = true;
     if (X_NodeChain::seedChain( ColIterator { (*grid_).data() }, clueIndex ))
       found = true;
     if (X_NodeChain::seedChain( BoxIterator { (*grid_).data() }, clueIndex ))
       found = true;
-  #else
-    if (X_NodeChain::seedChainOld( RowIterator { (*grid_).data() }, clueIndex ))
-      found = true;
-    if (X_NodeChain::seedChainOld( ColIterator { (*grid_).data() }, clueIndex ))
-      found = true;
-    if (X_NodeChain::seedChainOld( BoxIterator { (*grid_).data() }, clueIndex ))
-      found = true;
-  #endif
   }
   for (auto &cell : *grid_)
     if (cell.candidateProtected()) {

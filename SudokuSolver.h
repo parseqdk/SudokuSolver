@@ -1854,14 +1854,11 @@ class SudokuGrid {
                                                        : (HouseIterator &) ColIterator { const_cast<Cell *>( node.cell_ ) };
           return candidateCountInGroup( lineIterator, clueIndex );
         }
-        //return (node.isPointNode()) ? 1
-        //                            : candidateCountInGroup( lineIterator( node.isRowGroupNode(), node.cell_ ), clueIndex );
       }
       size_t length( void ) const;
       void printChainEngine( X_NodeChain *chain,             const char *format, va_list &args ) const;
       void printChain( X_NodeChain *chain,                   const char *format, ... ) const;
       void printChain( X_NodeChain *chain, const Node &node, const char *format, ... ) const;
-    //static void printChain( X_NodeChain *chain, const Node &node, const Link *link, const char *format, ... );
       static const Cell *pointFromGroup( const Cell *groupStart, bool rowType, int clueIndex, const Cell *cellToIgnore = nullptr );
       bool diveDeeper( X_NodeChain *chain, const Node &foundNode ) const;
       bool chainClosedKillZone( X_NodeChain *chain, const Node &loopStartChainedNode ) const;
@@ -1870,7 +1867,6 @@ class SudokuGrid {
       static bool killZone( X_NodeChain *chain, const Node &nodeA, const Node &nodeB );
       bool chainKillZone( X_NodeChain *chain, const Node &endNode ) const;
       const Node *getChainedNode( const Cell *cell ) const;
-    //std::tuple<bool, const Node *> chainClosed( const Node &strongLinkEnd ) const;
       const Link *chainEffectivelyClosed( const Node &strongLinkEnd ) const;
       bool isStrongLinkStartInChain( const Node &node ) const;
       bool usualEliminationAndDiveDeeper( X_NodeChain *chain, Node &foundNode ) const;
@@ -1891,7 +1887,6 @@ class SudokuGrid {
                             HouseIterator &headGroupIt, int headCandidateCount,
                             int clueIndex, const Cell *intersectionCell );
       Link() = delete;
-    //Link( const Cell *cell, const Link *previous ) : node { NodeId::point, cell }, prev_ { previous } {}
       Link( const Cell *cell, NodeId type, const Link *previous ) : node { type, cell }, prev_ { previous} {}
 
       //static Node getNode( HouseIterator &groupIterator, int candidateCount, int clueIndex );
@@ -1910,10 +1905,6 @@ class SudokuGrid {
     static Link::Node getNode( HouseIterator &groupIterator, int candidateCount, int clueIndex );
 
     const Link *getRoot( void ) const { return &seedLink[1]; }
-  //bool  seedPointStrongLink( HouseIterator &houseIterator );
-    bool  seedGroupStrongLinkOld( BoxIterator &boxIterator );
-    bool  seedGroupStrongLinkOld( HouseIterator &lineIterator );
-    bool  seedStrongLinkOld( HouseIterator &houseIterator );
 
     static void printSeedLink( const Link (&seedLink)[2], const char *format, ... );
 
@@ -1931,21 +1922,20 @@ class SudokuGrid {
       seedLink {{ nullptr, NodeId::point, &seedLink[1] }, { nullptr, NodeId::point, nullptr }} {}
 
   public:
-      static bool seedChainOld( HouseIterator &&houseIterator, int clueIndex );
-      static bool seedChain( HouseIterator &&houseIterator, int clueIndex );
+    static bool seedChain( HouseIterator &&houseIterator, int clueIndex );
   };
 
+  //bool AICs( void );                 // dxSudoku #55: 12:00, #96: 17:20, (AIC = Alternate Inference Chain)
+  //bool niceLoop_AIC( void );         // dxSudoku #97, #98, #99, #94
+  //bool groupNiceLoop_AIC( void );
   //bool xy_Chain( Void );             // dxSudoku #66 + #67
   //bool remotePair( void );
   //bool sueDeCoq( void );             // possible are 4,5,6,7,8-cell types - (dxSudoku #101 = 4-cell type)
   //bool bowmansBingo( void );         // aka?: "Bivalue Elimination Part I" - dxSudoku #83, (Part II: #84)
   //bool almostLockedSets( void );
-  //bool AICs( void );                 // dxSudoku #55: 12:00, #96: 17:20, (AIC = Alternate Inference Chain)
-  //bool niceLoop_AIC( void );         // dxSudoku #97, #98, #99, #94
-  //bool groupNiceLoop_AIC( void );
   //bool forcingChain( void );
   //bool squirmbag( void );            // aka: starfish
-  //bool nishio( void );
+  //bool nishio( void );               // aka: ??
 
   static bool validClue( Cell &cell, uchar clue );
   bool bruteForce( size_t startIndex );
@@ -1953,7 +1943,6 @@ class SudokuGrid {
 
   static bool sortedBruteForce( std::multimap<int, Cell *> &grid,
                                 std::multimap<int, Cell *>::iterator startIterator );
-  //bool sortedBruteForce( std::multimap<int, Cell *> &grid, size_t startIndex );
   bool sortedBruteForce( void );
 
   void printSudokuGrid( const char *format, ... ) const;
@@ -2011,13 +2000,13 @@ class SudokuGrid {
 
 public:
   ~SudokuGrid();
-  SudokuGrid() = delete;                                             // default constructor: blocked
+  SudokuGrid() = delete;                                             // no default constructor
   SudokuGrid( const char *name, const uchar (*input)[SUDOKU_GRID_SIZE * SUDOKU_GRID_SIZE] );
 
-  SudokuGrid( const SudokuGrid &rhs ) = delete;                      // copy constructor: blocked
-  SudokuGrid(       SudokuGrid &&rhs ) = delete;                     // move constructor: blocked
-  SudokuGrid &operator = ( const SudokuGrid &rhs ) = delete;         // copy assignment: blocked
-  SudokuGrid &operator = (       SudokuGrid &&rhs ) = delete;        // move assignment: blocked
+  SudokuGrid( const SudokuGrid &rhs ) = delete;                      // no copy constructor
+  SudokuGrid(       SudokuGrid &&rhs ) = delete;                     // no move constructor
+  SudokuGrid &operator = ( const SudokuGrid &rhs ) = delete;         // no copy assignment
+  SudokuGrid &operator = (       SudokuGrid &&rhs ) = delete;        // no move assignment
 
   int sudokuSolve( int riddleId = -1 );
 };
