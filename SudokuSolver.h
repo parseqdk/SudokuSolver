@@ -1,6 +1,7 @@
 //
 // Sudoku Solver - engine
-// by d/x, Spring 2022, Daniel Koziarski
+// by d/x, Spring/Summer/Autumn 2022, Daniel Koziarski
+// TabSize = 2.
 //
 
 //#pragma once
