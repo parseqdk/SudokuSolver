@@ -1,7 +1,7 @@
 //
 // Sudoku Solver test suit
 // by d/x, Spring/Summer/Autumn 2022, Daniel Koziarski
-// TabSize = 2.
+// source indentation = 2.
 //
 
 #include <cstdio>
@@ -917,7 +917,7 @@ int main( int argc, char *argv[] ) {
 
   size_t inError = 0, unsolved = 0, solved = 0;
 
-  for (int i = 51 /* 51, 9 */; i < elementsof( sudokuRiddles ); i++) {
+  for (int i = 21 /* 51, 9 */; i < elementsof( sudokuRiddles ); i++) {
     SudokuGrid sudokuGrid { sudokuRiddles[i].name, &sudokuRiddles[i].clues };
 
     switch (sudokuGrid.sudokuSolve( i )) {

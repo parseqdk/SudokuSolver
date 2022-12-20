@@ -1,7 +1,7 @@
 //
 // Sudoku Solver - engine
 // by d/x, Spring/Summer/Autumn 2022, Daniel Koziarski
-// TabSize = 2.
+// source indentation = 2.
 //
 
 //#pragma once
@@ -81,7 +81,7 @@ class SudokuGrid {
     Cell *colOfCellsStart_ {};
     Cell *boxOfCellsStart_ {};
 
-    struct CandidateTraits {           // todo! replace struct by class
+    struct CandidateTraits {           // todo! replace struct by class ?
       uchar crossOutProtected_ { 0 };
       uchar clues_[SUDOKU_GRID_SIZE] {};
 
@@ -1542,49 +1542,6 @@ class SudokuGrid {
     head.candidateProtection( state );
     body.candidateProtection( state );
     tail.candidateProtection( state );
-  }
-#endif
-#if 0
-  // todo! czy watianty chainProtection() Dla 2x CellFIshDuo, 3x CellFishTrio s¹ nadal potrzebne?
-  static void chainProtection( bool state, CellFishDuo &duoA, CellFishDuo &duoB ) {
-    for (size_t i = 0; i < elementsof( duoA.fish_ ); i++) {
-      duoA.fish_[i]->candidate_.crossOutProtected_ = state;
-      duoB.fish_[i]->candidate_.crossOutProtected_ = state;
-    }
-  }
-  // todo! czy watianty chainProtection() Dla 2x CellFIshDuo, 3x CellFishTrio s¹ nadal potrzebne?
-  static void chainProtection( bool state, CellFishTrio &trioA, CellFishTrio &trioB, CellFishTrio &trioC ) {
-    for (size_t i = 0; i < elementsof( trioA.fish_ ); i++) {
-      if (trioA.fish_[i] != nullptr)
-        trioA.fish_[i]->candidate_.crossOutProtected_ = state;
-
-      if (trioB.fish_[i] != nullptr)
-        trioB.fish_[i]->candidate_.crossOutProtected_ = state;
-
-      if (trioC.fish_[i] != nullptr)
-        trioC.fish_[i]->candidate_.crossOutProtected_ = state;
-    }
-  }
-#endif
-#if 0
-  static void chainProtection( bool state,
-                               CellFishQuartet &qA,
-                               CellFishQuartet &qB,
-                               CellFishQuartet &qC,
-                               CellFishQuartet &qD ) {
-    for (size_t i = 0; i < elementsof( qA.fish_ ); i++) {
-      if (qA.fish_[i] != nullptr)
-        qA.fish_[i]->candidates_.crossOutProtected_ = state;
-
-      if (qB.fish_[i] != nullptr)
-        qB.fish_[i]->candidates_.crossOutProtected_ = state;
-
-      if (qC.fish_[i] != nullptr)
-        qC.fish_[i]->candidates_.crossOutProtected_ = state;
-
-      if (qD.fish_[i] != nullptr)
-        qD.fish_[i]->candidates_.crossOutProtected_ = state;
-    }
   }
 #endif
 

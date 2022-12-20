@@ -1,7 +1,7 @@
 //
 // Sudoku Solver - engine
 // by d/x, Spring/Summer/Autumn 2022, Daniel Koziarski
-// TabSize = 2.
+// source indentation = 2.
 //
 
 //#include <cstddef>
@@ -2176,8 +2176,9 @@ bool SudokuGrid::finnedSwordfish( void ) {
   //
   //   Fish base sets searching algorithm can be iterated row by row and then column by column.
 
-
   bool found = false;
+
+  assert( 0 );     // implementation required
 
   return found;
 }  // -------------------------------------------------------------------------------------------
@@ -2207,6 +2208,8 @@ bool SudokuGrid::finnedFish( void ) {
   // Is this idea appliable to X-Wing? This is a good question and need to be more investigated.
 
   bool found = false;
+
+  assert( 0 );     // implementation required
 
   return found;
 }  // -------------------------------------------------------------------------------------------
@@ -2444,22 +2447,11 @@ bool SudokuGrid::uniqueRectangleAnalysis( HouseIterator &&houseIterator, bool ro
 bool SudokuGrid::uniqueRectangleType5CrossOut( const Cell *rectangleCorner, CellFishQuartet &rectangle, int clueIndex ) {
   bool   found = false;
   size_t neighboursQuantity = (rectangle.fish_[3]->candidateCount() < 3) ? 2 : 3;
-#if 1
+
   if (candidateCrossOutInProtectedHouseIfInAllNeighboursSight( BoxIterator { rectangleCorner->boxOfCellsStart_ },
        clueIndex, &rectangle.fish_[1], neighboursQuantity ))
     found = true;
-#else
-  BoxIterator killBoxOfCells { rectangleCorner->boxOfCellsStart_ };
 
-  for (size_t i = 0; i < SUDOKU_GRID_SIZE; i++) {
-    Cell *cell = &killBoxOfCells[i];
-    if (cell->inAllNeighboursSight( const_cast<const Cell **> (rectangle.fish_ + 1), neighboursQuantity ) &&
-        cell->candidateCrossOutInProtectedCell( clueIndex )) {
-      printf( " @[row:%d, col:%d]", rowNumber( cell ), colNumber( cell ) );
-      found = true;
-    }
-  }
-#endif
   return found;
 }  // -------------------------------------------------------------------------------------------
 
@@ -2508,6 +2500,7 @@ bool SudokuGrid::uniqueRectangleScrutinyType5( RowIterator &rowIterator, CellFis
   return found;
 }  // -------------------------------------------------------------------------------------------
 
+// todo! refactoring: split method in smaller pieces
 bool SudokuGrid::uniqueRectangleScrutinyType6( RowIterator &rowIterator, CellFishQuartet &rectangle ) {
   // 1st, 4th rectangle diagonal corner candidates: XY
   // 2nd, 3rd rectangle diagonal corner candidates: XY+[at least one additional candidate (but both corners _together_)]
@@ -3598,6 +3591,7 @@ bool SudokuGrid::X_NodeChain::Link::eliminate( X_NodeChain *chain, Node &foundNo
   return found;
 }  // -------------------------------------------------------------------------------------------
 
+// todo! refactoring: split method in smaller pieces
 bool SudokuGrid::X_NodeChain::Link::addStrongLinkWithinLine( X_NodeChain *chain, HouseIterator &lineIterator ) const {
   const int clueIndex = chain->getClueIndex();
   assert( lineIterator.isLineType() );
@@ -3636,6 +3630,7 @@ bool SudokuGrid::X_NodeChain::Link::addStrongLinkWithinLine( X_NodeChain *chain,
   return eliminate( chain, freshGroup.node );              // try to eliminate, append fresh STRONG LINK, dive deeper
 }  // -------------------------------------------------------------------------------------------
 
+// todo! refactoring: split method in smaller pieces
 bool SudokuGrid::X_NodeChain::Link::addStrongLinkWithinBox( X_NodeChain *chain, HouseIterator &&boxGroupIterator ) const {
   const int clueIndex = chain->getClueIndex();
   assert( boxGroupIterator.isLineType() );
@@ -3792,6 +3787,7 @@ bool SudokuGrid::X_NodeChain::Link::addGroupedNodeWithinLineWeakLink( X_NodeChai
   return found;
 }  // -------------------------------------------------------------------------------------------
 
+// todo! refactoring: split method in smaller pieces
 bool SudokuGrid::X_NodeChain::Link::addGroupedNodeWithinBoxWeakLink( X_NodeChain *chain, HouseIterator &&boxGroupIterator ) const {
   // return true, if underlying code performs successful elimination
   bool found = false;
@@ -3997,7 +3993,7 @@ SudokuGrid::X_NodeChain::getNode( HouseIterator &groupIterator, int candidateCou
   return Link::Node { nodeType(), nodeCell() };  // favor Return Value Optimization (RVO is compiler's job since C++17)
 }  // -------------------------------------------------------------------------------------------
 
-// ==== old x-chain: with fewer seedLinks than possible (in special cases) ======================
+// ==== after x_Chain() to x-NodeChain() upgrade: ===============================================
 
    // todo!  task #3:
    // are current addWeakLink() and addStrongLink() really able to add
@@ -4345,7 +4341,7 @@ bool SudokuGrid::bruteForce( void ) {
 
   printf( "bruteForce(): " );
   size_t initialClueCount = 0;
-  for (auto &cell : *grid_)       // todo! do it with STL
+  for (auto &cell : *grid_)       // todo! do it with STL?
     if (cell.solved())
       initialClueCount += 1;
   
@@ -4562,9 +4558,11 @@ int SudokuGrid::sudokuSolve( int riddleId ) {
   #if 1
     {&SudokuGrid::uniqueRectangle,  "unique rectangle", /* count: */ 0, /* verbose level: */ 0},   // UR type 1...7
   #endif
-  //{&SudokuGrid::x_Chain,          "X-Chain",          /* count: */ 0, /* verbose level: */ 0},
+  #if 0
+    {&SudokuGrid::x_Chain,          "X-Chain",          /* count: */ 0, /* verbose level: */ 0},
+  #endif
     {&SudokuGrid::x_NodeChain,      "X-NodeChain",      /* count: */ 0, /* verbose level: */ 0},
-  //{&SudokuGrid::remotePair,       "remote pair",      /* count: */ 0, /* verbose level: */ 0},   // todo!
+  //{&SudokuGrid::remotePair,       "remote pair",      /* count: */ 0, /* verbose level: */ 0},
   #if 0
     {&SudokuGrid::sortedBruteForce, "sortedBruteForce", /* count: */ 0, /* verbose level: */ 0},   // recursive. slow
   #elif 0
